@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Glowing Tile Match Game</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: radial-gradient(circle at center, #111, #000);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+    h1 {
+      text-align: center;
+      padding: 20px 0;
+      color: #fff;
+      text-shadow: 0 0 10px #0ff;
+    }
+    .controls {
+      margin: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      justify-content: center;
+      align-items: center;
+    }
+    .controls input, .controls button {
+      padding: 10px 20px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: none;
+      background-color: #0ff;
+      color: #000;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .controls input[type="number"] {
+      width: 80px;
+      text-align: center;
+    }
+    .controls button:hover {
+      background-color: #00bcd4;
+    }
+    .game-board {
+      display: grid;
+      gap: 10px;
+      justify-content: center;
+      padding: 20px;
+    }
+    .tile {
+      width: min(16vw, 70px);
+      height: min(16vw, 70px);
+      background-color: #222;
+      border-radius: 10px;
+      transition: all 0.3s;
+      box-shadow: 0 0 5px rgba(255,255,255,0.2);
+      cursor: pointer;
+    }
+    .tile:hover {
+      box-shadow: 0 0 15px var(--color);
+    }
+    .tile.revealed {
+      background-color: var(--color);
+      box-shadow: 0 0 20px var(--color);
+      animation: glow 0.4s ease-out;
+    }
+    @keyframes glow {
+      0% { box-shadow: 0 0 0 var(--color); }
+      50% { box-shadow: 0 0 20px 10px var(--color); }
+      100% { box-shadow: 0 0 15px 5px var(--color); }
+    }
+    .dashboard {
+      margin: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      justify-content: center;
+      align-items: center;
+      margin-top: auto;
+      padding-bottom: 20px;
+      flex-direction: column;
+    }
+    .dashboard span {
+      font-weight: bold;
+    }
+    #leaderboard {
+      margin-top: 10px;
+      text-align: center;
+    }
+    #leaderboard h3 {
+      margin-bottom: 5px;
+      text-shadow: 0 0 5px #0ff;
+    }
+    #leaderboard ul {
+      list-style: none;
+      padding: 0;
+    }
+    #leaderboard li {
+      padding: 2px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>Glowing Tile Match Game</h1>
+  <div class="controls">
+    <label for="grid-size">Grid Size (Even only):</label>
+    <input type="number" id="grid-size" min="2" max="10" step="2" value="4" onchange="updateGridSize()">
+    <button onclick="restartGame()">🔁 Restart</button>
+    <button onclick="toggleTheme()" id="themeToggle">🌙 Dark Mode</button>
+  </div>
+  <div class="game-board" id="board"></div>
+  <div class="dashboard">
+    <div>⏱ Time: <span id="timer">0</span>s</div>
+    <div>🎯 Moves: <span id="moves">0</span></div>
+    <div id="leaderboard">
+      <h3>🏆 All-Time Winners</h3>
+      <ul id="winnersList"></ul>
+    </div>
+  </div>
+  <script>
+    const themes = [
+      { background: 'radial-gradient(circle at center, #111, #000)', text: '#fff', icon: '🌙 Dark Mode' },
+      { background: 'linear-gradient(to bottom, #1a2a6c, #b21f1f, #fdbb2d)', text: '#fff', icon: '🌈 Theme' },
+      { background: 'linear-gradient(to right, #00f260, #0575e6)', text: '#000', icon: '☀️ Light Mode' }
+    ];
+
+    let currentGridSize = 4;
+    let tileColors = [];
+    let firstTile = null;
+    let secondTile = null;
+    let lock = false;
+    let moves = 0;
+    let time = 0;
+    let timerInterval;
+    let currentTheme = 0;
+
+    function toggleTheme() {
+      currentTheme = (currentTheme + 1) % themes.length;
+      const theme = themes[currentTheme];
+      document.body.style.background = theme.background;
+      document.body.style.color = theme.text;
+      document.getElementById('themeToggle').textContent = theme.icon;
+      localStorage.setItem('themeIndex', currentTheme);
+    }
+
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+    }
+
+    function startTimer() {
+      clearInterval(timerInterval);
+      time = 0;
+      document.getElementById('timer').textContent = time;
+      timerInterval = setInterval(() => {
+        time++;
+        document.getElementById('timer').textContent = time;
+      }, 1000);
+    }
+
+    function createBoard() {
+      const board = document.getElementById('board');
+      const totalTiles = currentGridSize * currentGridSize;
+      const numPairs = Math.floor(totalTiles / 2);
+      tileColors = Array.from({ length: numPairs }, (_, i) => `hsl(${(i * 360) / numPairs}, 100%, 60%)`);
+      const doubled = [...tileColors, ...tileColors];
+      shuffle(doubled);
+
+      board.innerHTML = '';
+      board.style.gridTemplateColumns = `repeat(${currentGridSize}, min(16vw, 70px))`;
+
+      doubled.slice(0, totalTiles).forEach(color => {
+        const tile = document.createElement('div');
+        tile.className = 'tile';
+        tile.dataset.color = color;
+        tile.style.setProperty('--color', color);
+        tile.onclick = () => handleClick(tile);
+        board.appendChild(tile);
+      });
+
+      moves = 0;
+      document.getElementById('moves').textContent = moves;
+      startTimer();
+    }
+
+    function handleClick(tile) {
+      if (lock || tile.classList.contains('revealed')) return;
+      tile.classList.add('revealed');
+
+      if (!firstTile) {
+        firstTile = tile;
+      } else if (!secondTile) {
+        secondTile = tile;
+        lock = true;
+        moves++;
+        document.getElementById('moves').textContent = moves;
+
+        if (firstTile.dataset.color === secondTile.dataset.color) {
+          firstTile = secondTile = null;
+          lock = false;
+
+          if (document.querySelectorAll('.tile.revealed').length === tileColors.length * 2) {
+            clearInterval(timerInterval);
+            saveWin();
+          }
+        } else {
+          setTimeout(() => {
+            firstTile.classList.remove('revealed');
+            secondTile.classList.remove('revealed');
+            firstTile = secondTile = null;
+            lock = false;
+          }, 800);
+        }
+      }
+    }
+
+    function saveWin() {
+      const winners = JSON.parse(localStorage.getItem('winners') || '[]');
+      winners.push(`Grid: ${currentGridSize}x${currentGridSize}, Time: ${time}s, Moves: ${moves}`);
+      localStorage.setItem('winners', JSON.stringify(winners));
+      updateWinners();
+    }
+
+    function updateWinners() {
+      const winners = JSON.parse(localStorage.getItem('winners') || '[]');
+      const list = document.getElementById('winnersList');
+      list.innerHTML = '';
+      winners.slice(-10).reverse().forEach(win => {
+        const li = document.createElement('li');
+        li.textContent = win;
+        list.appendChild(li);
+      });
+    }
+
+    function restartGame() {
+      createBoard();
+    }
+
+    function updateGridSize() {
+      const sizeInput = document.getElementById('grid-size');
+      const size = parseInt(sizeInput.value);
+      if (size % 2 === 0 && size >= 2 && size <= 10) {
+        currentGridSize = size;
+        createBoard();
+      } else {
+        alert("Please enter an even number between 2 and 10.");
+      }
+    }
+
+    (function init() {
+      currentTheme = parseInt(localStorage.getItem('themeIndex')) || 0;
+      toggleTheme();
+      updateGridSize();
+      updateWinners();
+    })();
+  </script>
+</body>
+</html>
