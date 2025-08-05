@@ -50,13 +50,13 @@
     }
     .game-board {
       display: grid;
-      gap: 10px;
+      gap: 2vw;
       justify-content: center;
       padding: 20px;
     }
     .tile {
-      width: min(16vw, 70px);
-      height: min(16vw, 70px);
+      width: min(20vw, 70px);
+      height: min(20vw, 70px);
       background-color: #222;
       border-radius: 10px;
       transition: all 0.3s;
@@ -176,7 +176,7 @@
       shuffle(doubled);
 
       board.innerHTML = '';
-      board.style.gridTemplateColumns = `repeat(${currentGridSize}, min(16vw, 70px))`;
+      board.style.gridTemplateColumns = `repeat(${currentGridSize}, 1fr)`;
 
       doubled.slice(0, totalTiles).forEach(color => {
         const tile = document.createElement('div');
