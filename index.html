@@ -298,11 +298,11 @@
     function updateGridSize() {
       const sizeInput = document.getElementById('grid-size');
       const size = parseInt(sizeInput.value);
-      if (size % 2 === 0 && size >= 2 && size <= 10) {
+      if (size % 2 === 0 && size >= 2 && size <= 16) {
         currentGridSize = size;
         createBoard();
       } else {
-        alert("Please enter an even number between 2 and 10.");
+        alert("Please enter an even number from 2 to 16.");
       }
     }
 
