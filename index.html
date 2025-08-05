@@ -5,6 +5,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Glowing Tile Match Game</title>
   <style>
+    .emoji-game-button {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background-color: #ffcc00;
+  color: #000;
+  padding: 12px 18px;
+  border-radius: 30px;
+  font-weight: bold;
+  text-decoration: none;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+  transition: background-color 0.3s ease;
+  z-index: 9999;
+}
+
+.emoji-game-button:hover {
+  background-color: #ff9900;
+}
+
     * { box-sizing: border-box; }
     body {
       margin: 0;
@@ -295,5 +314,8 @@
       updateBestScoreDisplay();
     })();
   </script>
+  <a href="https://hematics43.github.io/EMOJI-MATCH-GAME/" target="_blank" class="emoji-game-button">
+  🎮 Play Emoji Match
+</a>
 </body>
 </html>
